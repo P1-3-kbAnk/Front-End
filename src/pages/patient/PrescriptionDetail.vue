@@ -6,7 +6,7 @@ import HeadBar from '@/components/HeadBar.vue';
 import NavBar from '@/components/NavBar.vue';
 import Main from '@/components/Main.vue';
 import html2canvas from 'html2canvas';
-import { Toaster, toast } from '@steveyuowo/vue-hot-toast';
+import { toast } from '@steveyuowo/vue-hot-toast';
 import '@/assets/toast.css';
 import {
   Dialog,
@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/carousel';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import axiosInstance from '@/api/instance';
 
 interface HospitalBill {
@@ -107,14 +108,14 @@ interface Chemist {
   pharmacyId: number | null;
 }
 
-interface MedicalSystem {
-  doctor: Doctor;
-  prescription: Prescription;
-  pharmacy: Pharmacy;
-  hospital: Hospital;
-  user: User;
-  chemist: Chemist;
-}
+// interface MedicalSystem {
+//   doctor: Doctor;
+//   prescription: Prescription;
+//   pharmacy: Pharmacy;
+//   hospital: Hospital;
+//   user: User;
+//   chemist: Chemist;
+// }
 
 const route = useRoute();
 const faceIdStore = useFaceIdStore();
@@ -154,7 +155,7 @@ const getPrescriptionDetail = async () => {
 const getHospitalBill = async () => {
   try {
     const response = await axiosInstance.get(
-      `api/patient/prescription/hospitalBill/${[prescId]}?userId=${userId}`
+      `api/patient/prescription/hospitalBill/${prescId}?userId=${userId}`
     );
     hospitalBill.value = response.data.data;
     console.log(response.data.data);
@@ -166,7 +167,7 @@ const getHospitalBill = async () => {
 const getPharmacyBill = async () => {
   try {
     const response = await axiosInstance.get(
-      `api/patient/prescription/pharmacyBill/${[prescId]}?userId=${userId}`
+      `api/patient/prescription/pharmacyBill/${prescId}?userId=${userId}`
     );
     pharmacyBill.value = response.data.data;
     console.log(response.data.data);
@@ -179,7 +180,7 @@ const handleReceiptIndex = (idx: number) => {
   receiptIndex.value = idx;
 };
 
-faceIdStore.isAuthenticated = true;
+faceIdStore.isAuthenticated = false;
 const handleFaceIdAuth = () => {
   faceIdStore.authenticate(userName.value);
 };
@@ -211,29 +212,30 @@ const prescDetail = computed(() => [
   }
 ]);
 
-const claimRequested = ref(false);
-const medicineReceived = ref(false);
-
 const handleClaim = async () => {
-  if (claimRequested.value) return;
+  if (prescInfo.value?.insuranceSt) {
+    toast.error('이미 신청했어요');
+    return;
+  }
   try {
     const response = await axiosInstance.patch(`/api/insurance/update/${prescId}?userId=1`);
     console.log(response);
     toast.success('청구 신청이 완료되었습니다');
-    claimRequested.value = true;
   } catch (err) {
     console.log(err);
   }
 };
 
 const handleReceived = async () => {
-  if (medicineReceived.value) return;
+  if (prescInfo.value?.prescriptionSt) {
+    toast.error('이미 수령했어요');
+    return;
+  }
 
   try {
     const response = await axiosInstance.patch(`/api/pharmacy/prescription/${prescId}?userId=1`);
     console.log(response);
     toast.success('약을 수령했습니다');
-    medicineReceived.value = true;
   } catch (err) {
     console.log(err);
   }
@@ -296,36 +298,39 @@ onMounted(() => {
 <template>
   <HeadBar :back-button="true">상세보기</HeadBar>
   <NavBar />
-  <Toaster />
   <Main :headbar="true" :navbar="true" :padded="true">
     <div class="misc-func-frame">
       <div class="misc-func-container">
         <div class="misc-func-left">
-          <div class="icon-frame">
-            <!-- 아이콘 -->
+          <div class="icon-frame claim">
+            <img src="/images/claim.svg" alt="claim" />
           </div>
           <div class="misc-info-text">
             <span class="misc-info-title">보험금 간편 청구</span>
             <span class="misc-info-desc">{서비스명}이 복잡한 과정을 대신 해드려요</span>
           </div>
         </div>
-        <Button @click="handleClaim()" :variant="claimRequested ? 'destructive' : 'default'">{{
-          claimRequested ? '완료' : '신청'
-        }}</Button>
+        <Button
+          @click="handleClaim()"
+          :variant="prescInfo?.insuranceSt ? 'destructive' : 'default'"
+          >{{ prescInfo?.insuranceSt ? '완료' : '신청' }}</Button
+        >
       </div>
       <div class="misc-func-container">
         <div class="misc-func-left">
-          <div class="icon-frame">
-            <!-- 아이콘 -->
+          <div class="icon-frame check">
+            <img src="/images/checkreceived.svg" alt="check" />
           </div>
           <div class="misc-info-text">
             <span class="misc-info-title">약 수령 확인</span>
             <span class="misc-info-desc">{서비스명}을 사용하지 않았어도 바꿀 수 있어요</span>
           </div>
         </div>
-        <Button @click="handleReceived()" :variant="medicineReceived ? 'destructive' : 'default'">{{
-          medicineReceived ? '완료' : '신청'
-        }}</Button>
+        <Button
+          @click="handleReceived()"
+          :variant="prescInfo?.prescriptionSt ? 'destructive' : 'default'"
+          >{{ prescInfo?.prescriptionSt ? '완료' : '신청' }}</Button
+        >
       </div>
     </div>
     <div class="presc-title">처방전 상세</div>
@@ -333,6 +338,7 @@ onMounted(() => {
       <div class="detail-container" v-for="info in prescDetail" :key="info.name">
         <span>{{ info.name }}</span>
         <div v-if="info.name != '처방약'">
+          <Skeleton v-if="!prescInfo" class="h-7 w-16"></Skeleton>
           {{ info.info }}
         </div>
         <Popover v-else>
@@ -699,6 +705,13 @@ onMounted(() => {
   justify-content: center;
   align-items: center;
 }
+.claim {
+  background-color: #b4c8d5;
+}
+.check {
+  background-color: #ffeeab;
+}
+
 .misc-info-text {
   display: flex;
   flex-direction: column;
