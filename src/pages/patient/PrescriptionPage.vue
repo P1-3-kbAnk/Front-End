@@ -7,15 +7,16 @@ import Main from '@/components/Main.vue';
 import ShadowBox from '@/components/ShadowBox.vue';
 
 interface Prescription {
-  prescriptionPk: number;
-  prescriptionNo: number;
-  duration: number;
+  chemistId: number;
   description: string;
-  prescriptionSt: boolean;
+  doctorId: number;
+  duration: number;
+  hospitalNm: string;
   insuranceSt: boolean;
-  doctorId: number | null;
+  prescriptionNo: number;
+  prescriptionPk: number;
+  prescriptionSt: boolean;
   userId: number | null;
-  chemistId: number | null;
 }
 
 const prescriptions = ref<Prescription[]>([]);
@@ -87,10 +88,10 @@ onUnmounted(() => {
     >
       <div class="presc-top">
         <div>
-          <div class="name-hospital">{{ prescription.prescriptionPk }}김성헌 내과의원</div>
+          <div class="name-hospital">{{ prescription.hospitalNm }}</div>
           <div class="name-pharm">어린이대공원약국</div>
         </div>
-        <div class="name-hospital red">D-3</div>
+        <div class="name-hospital red">D-{{ prescription.duration }}</div>
       </div>
       <div class="presc-bottom">
         <div class="type-date">

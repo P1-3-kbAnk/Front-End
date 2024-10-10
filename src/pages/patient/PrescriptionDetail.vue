@@ -31,17 +31,21 @@ import { Skeleton } from '@/components/ui/skeleton';
 import axiosInstance from '@/api/instance';
 
 interface HospitalBill {
+  createYmd: number[];
   hospitalBillPk: number;
-  totalPrice: number;
-  prescriptionId: number;
   hospitalNm: string;
+  hospitalNo: number;
+  prescriptionId: number;
+  totalPrice: number;
 }
 
 interface PharmacyBill {
+  createYmd: number[];
   pharmacyBillPk: number;
-  totalPrice: number;
-  prescriptionId: number;
   pharmacyNm: string;
+  pharmacyNo: number;
+  prescriptionId: number;
+  totalPrice: number;
 }
 
 interface Doctor {
@@ -180,7 +184,7 @@ const handleReceiptIndex = (idx: number) => {
   receiptIndex.value = idx;
 };
 
-faceIdStore.isAuthenticated = false;
+faceIdStore.isAuthenticated = true;
 const handleFaceIdAuth = () => {
   faceIdStore.authenticate(userName.value);
 };
@@ -221,6 +225,7 @@ const handleClaim = async () => {
     const response = await axiosInstance.patch(`/api/insurance/update/${prescId}?userId=1`);
     console.log(response);
     toast.success('청구 신청이 완료되었습니다');
+    getPrescriptionDetail();
   } catch (err) {
     console.log(err);
   }
@@ -236,6 +241,7 @@ const handleReceived = async () => {
     const response = await axiosInstance.patch(`/api/pharmacy/prescription/${prescId}?userId=1`);
     console.log(response);
     toast.success('약을 수령했습니다');
+    getPrescriptionDetail();
   } catch (err) {
     console.log(err);
   }
@@ -251,10 +257,10 @@ const saveAsImage = async (item: string) => {
   } else if (item === 'carousel-item') {
     if (receiptIndex.value === 0) {
       selector = '.carousel-item-first';
-      fileName = 'receipt_1';
+      fileName = 'receipt_hospital';
     } else {
       selector = '.carousel-item-second';
-      fileName = 'receipt_2';
+      fileName = 'receipt_pharmacy';
     }
   } else {
     console.error('Invalid item type');
@@ -580,7 +586,11 @@ onMounted(() => {
               <div class="receipt-top">
                 <div class="receipt-info-line">
                   <div class="receipt-info-left">승인일시</div>
-                  <div>2024-09-23 11:19</div>
+                  <div>
+                    {{
+                      `${hospitalBill?.createYmd[0]}-${hospitalBill?.createYmd[1]}-${hospitalBill?.createYmd[2]} ${hospitalBill?.createYmd[3]}:${hospitalBill?.createYmd[4]}`
+                    }}
+                  </div>
                 </div>
                 <div class="receipt-info-line">
                   <div class="receipt-info-left">거래유형</div>
@@ -608,7 +618,7 @@ onMounted(() => {
                 </div>
                 <div class="receipt-info-line">
                   <div class="receipt-info-left">사업자번호</div>
-                  <div>123-456-7890</div>
+                  <div>{{ hospitalBill?.hospitalNo }}</div>
                 </div>
               </div>
             </CarouselItem>
@@ -623,7 +633,11 @@ onMounted(() => {
               <div class="receipt-top">
                 <div class="receipt-info-line">
                   <div class="receipt-info-left">승인일시</div>
-                  <div>2024-09-23 11:19</div>
+                  <div>
+                    {{
+                      `${pharmacyBill?.createYmd[0]}-${pharmacyBill?.createYmd[1]}-${pharmacyBill?.createYmd[2]} ${pharmacyBill?.createYmd[3]}:${pharmacyBill?.createYmd[4]}`
+                    }}
+                  </div>
                 </div>
                 <div class="receipt-info-line">
                   <div class="receipt-info-left">거래유형</div>
@@ -651,7 +665,7 @@ onMounted(() => {
                 </div>
                 <div class="receipt-info-line">
                   <div class="receipt-info-left">사업자번호</div>
-                  <div>123-456-7890</div>
+                  <div>{{ pharmacyBill?.pharmacyNo }}</div>
                 </div>
               </div>
             </CarouselItem>
