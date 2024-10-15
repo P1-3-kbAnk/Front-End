@@ -22,7 +22,7 @@ jobs:
         with:
           source-directory: 'output'
           destination-github-username: yjs96
-          destination-repository-name: bangbapdaFE
+          destination-repository-name: bangapda-release
           user-email: ${{ secrets.JOONSU_EMAIL }}
           commit-message: ${{ github.event.commits[0].message }}
           target-branch: develop
